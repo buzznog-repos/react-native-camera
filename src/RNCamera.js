@@ -600,6 +600,10 @@ export default class Camera extends React.Component<PropsType, StateType> {
     return await CameraManager.record(options, this._cameraHandle);
   }
 
+  addFilterImageOverlayOnBaseImage(baseImageURI, filterImageURI){
+    return CameraManager.addFilterImageOverlayOnBaseImage(baseImageURI, filterImageURI);    
+}
+
   stopRecording() {
     CameraManager.stopRecording(this._cameraHandle);
   }
