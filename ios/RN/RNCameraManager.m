@@ -481,7 +481,7 @@ RCT_EXPORT_METHOD(addFilterImageOverlayOnBaseImage:(NSString *)baseImageURI filt
 
 
         }
-    } failureBlock:failureblock];
+    } failureBlock:rnfailureblock];
 
 
 }
@@ -501,7 +501,7 @@ RCT_EXPORT_METHOD(addFilterImageOverlayOnBaseImage:(NSString *)baseImageURI filt
 
 }
 
-ALAssetsLibraryAccessFailureBlock failureblock  = ^(NSError *myerror){
+ALAssetsLibraryAccessFailureBlock rnfailureblock  = ^(NSError *myerror){
 
     //failed to get image.
 };
