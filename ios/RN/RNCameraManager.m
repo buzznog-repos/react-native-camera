@@ -442,49 +442,40 @@ RCT_EXPORT_METHOD(addFilterImageOverlayOnBaseImage:(NSString *)baseImageURI filt
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd-HH-mm-ss"];
     timeStamp = [dateFormatter stringFromDate:now];
+    NSString* baseImagePath = [ baseImageURI stringByReplacingOccurrencesOfString:@"file://" withString:@""];
+    
+    UIImage *originalImg = [UIImage imageWithContentsOfFile:baseImagePath];
 
-    ALAssetsLibrary* assetslibrary = [[ALAssetsLibrary alloc] init];
-    [assetslibrary assetForURL:[NSURL URLWithString:baseImageURI] resultBlock: ^(ALAsset *myasset){
+    if (originalImg){
+        NSURLSessionTask *task = [[NSURLSession sharedSession] dataTaskWithURL:[NSURL URLWithString:filterImageURI] completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            if (data) {
+                UIImage *filterImg = [UIImage imageWithData:data];
+                if (filterImg) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        UIImage *finalImage = [self mergeImage:originalImg withImage:filterImg];
 
-        ALAssetRepresentation *rep = [myasset defaultRepresentation];
-        CGImageRef iref = [rep fullResolutionImage];
+                        ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
 
-        if (iref){
-
-                UIImage *originalImg = [UIImage imageWithCGImage:iref scale:[rep scale] orientation:(UIImageOrientation)[rep orientation]];
-
-
-                    NSURLSessionTask *task = [[NSURLSession sharedSession] dataTaskWithURL:[NSURL URLWithString:filterImageURI] completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-                        if (data) {
-                            UIImage *filterImg = [UIImage imageWithData:data];
-                            if (filterImg) {
-                                dispatch_async(dispatch_get_main_queue(), ^{
-                                    UIImage *finalImage = [self mergeImage:originalImg withImage:filterImg];
-
-                                    ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
-
-                                    [library writeImageToSavedPhotosAlbum:[finalImage CGImage] orientation:(ALAssetOrientation)[finalImage imageOrientation] completionBlock:^(NSURL *assetURL, NSError *error){
-                                        if (error == nil) {
-                                            resolve(@{@"path":[assetURL absoluteString]});
-                                        }
-                                        else {
-                                            reject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
-                                        }
-                                    }];
-
-                                });
+                        [library writeImageToSavedPhotosAlbum:[finalImage CGImage] orientation:(ALAssetOrientation)[finalImage imageOrientation] completionBlock:^(NSURL *assetURL, NSError *error){
+                            if (error == nil) {
+                                resolve(@{@"path":[assetURL absoluteString]});
                             }
-                        }
-                    }];
-                    [task resume];
+                            else {
+                                reject(RCTErrorUnspecified, nil, RCTErrorWithMessage(error.description));
+                            }
+                        }];
 
+                    });
+                }
+            }
+        }];
+        [task resume];
 
-
-        }
-    } failureBlock:rnfailureblock];
-
+    }
 
 }
+
+
 
 
 - (UIImage*)mergeImage:(UIImage*)first withImage:(UIImage*)second
